@@ -27,7 +27,7 @@
 		virtual bool enqueueStageOps(int stage, const std::vector<Operation> &operations);
 		virtual bool dequeueStageOps(int stage, std::vector<Operation>& operations);
 		
-		bool StringProcessor::jobReady();
+		bool jobReady();
 		bool getResults(StringList& strings);
 
 		bool done() const

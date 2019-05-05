@@ -111,6 +111,7 @@ bool StringProcessor::enqueueStageOps(int stage, const std::vector<Operation>& o
 
 bool StringProcessor::dequeueStageOps(int stage, std::vector<Operation> &operations)
 {
+	StageOperations stageToDelete = make_pair(stage, operations);
 	std::lock_guard<std::mutex> guard(mutex_);
 
 	if (process_)
@@ -123,7 +124,7 @@ bool StringProcessor::dequeueStageOps(int stage, std::vector<Operation> &operati
 	if (it == stages_.end())
 		return false;
 
-	operations = *it;
+	stageToDelete = *it;
 	stages_.erase(it);
 
 	return true;
