@@ -11,15 +11,129 @@
 #include <iostream>
 #include <algorithm>
 #include <iomanip>
-#include <locale>
+#include <vector>
 
+StringProcessor::StringProcessor( unsigned threadsNumber ) : threadsNumber_{ threadsNumber }
+{
+	for ( unsigned i = 0; i < threadsNumber_; i++ )
+		threads_.emplace_back( std::thread(&StringProcessor::waitForJobs, this) );
+}
 
+StringProcessor::~StringProcessor()
+{
+	stop_ = true;
+	condition_.notify_all();
 
-std::string StringProcessor::Lowercase( std::string& s)
+	try {
+		for (auto&& thread : threads_)
+			thread.join();
+	}
+	catch (...) {
+		;
+	}
+}
+
+void StringProcessor::waitForJobs()
+{
+	do {
+			if (jobReady())
+				process();
+	} while (!stop_);
+}
+
+bool StringProcessor::jobReady()
+{
+	std::unique_lock<std::mutex> guard(mutex_);
+
+	if (condition_.wait(guard, [this]() { return !strings_.empty() || stop_; }))
+		return !stop_ && !strings_.empty();
+
+	return false;
+}
+
+void StringProcessor::process()
+{
+	// iterate stages and apply ops to string
+	// at the end make done_ = true;
+}
+
+bool StringProcessor::start( const StringList &strings )
+{
+	if (strings.empty())
+		return false;
+	{
+		std::lock_guard<std::mutex> guard(mutex_);
+
+		if (!strings_.empty())
+			return false;
+	
+		strings_ = strings;
+		process_ = true;
+	}
+
+	condition_.notify_one();
+
+	return true;
+}
+
+bool StringProcessor::getResults(StringList& strings)
+{
+	std::lock_guard<std::mutex> guard(mutex_);
+
+	strings = strings_;
+	// reset
+	process_ = false;
+	strings_.clear();
+	stages_.clear();
+
+	return !strings.empty();
+}
+
+bool StringProcessor::enqueueStageOps(int stage, const std::vector<Operation>& operations)
+{
+	if (operations.size() > 5)
+		return false;
+
+	std::lock_guard<std::mutex> guard(mutex_);
+	
+	if (process_)
+		return false;
+
+	auto it = std::find_if(stages_.begin(), stages_.end(), [stage](const StageOperations & op) {
+		return op.first == stage;
+	});
+
+	if ( it == stages_.end() )
+		stages_.emplace_back(std::make_pair(stage, operations));
+
+	return true;
+}
+
+bool StringProcessor::dequeueStageOps(int stage, std::vector<Operation> &operations)
+{
+	std::lock_guard<std::mutex> guard(mutex_);
+
+	if (process_)
+		return false;
+
+	auto it = std::find_if(stages_.begin(), stages_.end(), [stage](const StageOperations & op) {
+		return op.first == stage;
+	});
+
+	if (it == stages_.end())
+		return false;
+
+	operations = *it;
+	stages_.erase(it);
+
+	return true;
+}
+
+std::string StringProcessor::lowercase( std::string& s)
 {	
 	// convert string to lower case
 
-	std::for_each(s.begin(), s.end(), [](char& c) {
+	std::for_each(s.begin(), s.end(), [](char c) {
 		c = ::tolower(c);
 	});
 
@@ -29,11 +143,11 @@ std::string StringProcessor::Lowercase( std::string& s)
 
 }
 
-std::string StringProcessor::Uppercase( std::string& s)
+std::string StringProcessor::uppercase( std::string& s)
 {
 	// convert string to lower case
 
-	std::for_each(s.begin(), s.end(), [](char& c) {
+	std::for_each(s.begin(), s.end(), [](char c) {
 		c = ::toupper(c);
 	});
 
@@ -43,20 +157,15 @@ std::string StringProcessor::Uppercase( std::string& s)
 
 }
 
-std::string  StringProcessor::Sort( std::string& str)
+std::string  StringProcessor::sort( std::string& str)
 {
 	std::sort(str.begin(), str.end());
 	return str;
 }
 
-std::string StringProcessor::Invert( std::string& str)
+std::string StringProcessor::invert( std::string& str)
 {
 	std::reverse(str.begin(), str.end());
 	return str;
 }
 
-void Start()
-{
-	//Start the processing
-
-}

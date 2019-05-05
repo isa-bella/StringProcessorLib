@@ -30,5 +30,27 @@ int main()
 	std::cout << "Invert: " <<
 		StringProcessor::Invert(test) << std::endl;
 
+	StringProcessor::StringList strings{ "lkjflsd kdfjsk KSJHKA", "lkjfskdfjs kfd" };
+
+	StringProcessor processor;
+
+	processor.addStageOps(1, { StringProcessor::lowercase, StringProcessor::uppercase });
+	processor.addStageOps(2, { StringProcessor::invert, StringProcessor::sort });
+
+	processor.start( strings );
+
+	while (!processor.done()) {
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+	}
+
+	StringProcessor::Job results;
+
+	processor.getResults(results);
+
+	std::ofstream out("out.txt");
+
+	for (auto&& line : results)
+		out << line;
+
 	return 0;
 }
