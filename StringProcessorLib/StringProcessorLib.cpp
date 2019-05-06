@@ -55,6 +55,44 @@ void StringProcessor::process()
 {
 	// iterate stages and apply ops to string
 	// at the end make done_ = true;
+
+
+	for (auto it = stages_.begin(); it != stages_.end(); ++it)
+	{
+		for (auto it2 = (*it).second.begin(); it2 != (*it).second.end(); ++it2)
+		{
+			switch (*it2)
+			{
+			case lowercase:
+				//for (auto it3 = strings_.begin(); it3 != strings_.end(); ++it3)
+				for	(std::vector<std::string>::size_type it3 = 0; it3 != strings_.size(); it3++)
+				{
+					results_[it3] = procLowercase(strings_[it3]);
+				}
+				break;
+			case uppercase:
+				for (std::vector<std::string>::size_type it3 = 0; it3 != strings_.size(); it3++)
+				{
+					results_[it3] = procUppercase(strings_[it3]);
+				}
+				break;
+			case sort:
+				for (std::vector<std::string>::size_type it3 = 0; it3 != strings_.size(); it3++)
+				{
+					results_[it3] = procSort(strings_[it3]);
+				}
+				break;
+			case invert:
+				for (std::vector<std::string>::size_type it3 = 0; it3 != strings_.size(); it3++)
+				{
+					results_[it3] = procInvert(strings_[it3]);
+				}
+				break;
+			}
+		}
+
+	}
+
 }
 
 bool StringProcessor::start( const StringList &strings )
@@ -80,13 +118,13 @@ std::vector<std::string> StringProcessor::getResults()
 {
 	std::lock_guard<std::mutex> guard(mutex_);
 
-	StringList tempStr = strings_;
+	
 	// reset
 	process_ = false;
 	strings_.clear();
 	stages_.clear();
 
-	return tempStr;
+	return results_;
 }
 
 bool StringProcessor::enqueueStageOps(int stage, const std::vector<Operation>& operations)

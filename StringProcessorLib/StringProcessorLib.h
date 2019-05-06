@@ -55,6 +55,7 @@
 	private:
 		std::list<StageOperations> stages_;
 		StringList				 strings_;
+		StringList				 results_;
 		std::vector<std::thread> threads_;
 		unsigned threadsNumber_{ 2 };
 		std::mutex mutex_;
