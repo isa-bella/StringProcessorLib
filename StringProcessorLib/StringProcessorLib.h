@@ -28,7 +28,7 @@
 		virtual bool dequeueStageOps(int stage, std::vector<Operation>& operations);
 		
 		bool jobReady();
-		bool getResults(StringList& strings);
+		std::vector<std::string> getResults();
 
 		bool done() const
 		{
@@ -41,16 +41,16 @@
 		void process();
 
 		// Returns the string in lowercase format
-		static std::string lowercase( std::string& str);
+		static std::string procLowercase( std::string& str);
 
 		// Returns the string in uppercase format
-		static std::string uppercase( std::string& str);
+		static std::string procUppercase( std::string& str);
 
 		// Returns the string sorted
-		static std::string sort( std::string& str);
+		static std::string procSort( std::string& str);
 
 		// Returns the string inverted
-		static std::string invert( std::string& str);
+		static std::string procInvert( std::string& str);
 
 	private:
 		std::list<StageOperations> stages_;

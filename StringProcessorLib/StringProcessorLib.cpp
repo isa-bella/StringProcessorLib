@@ -45,10 +45,10 @@ bool StringProcessor::jobReady()
 {
 	std::unique_lock<std::mutex> guard(mutex_);
 
-	if (condition_.wait(guard, [this]() { return !strings_.empty() || stop_; }))
-		return !stop_ && !strings_.empty();
-
-	return false;
+	condition_.wait(guard, [this]() { return !strings_.empty() || stop_; });
+		
+	return !stop_ && !strings_.empty();
+	
 }
 
 void StringProcessor::process()
@@ -76,17 +76,17 @@ bool StringProcessor::start( const StringList &strings )
 	return true;
 }
 
-bool StringProcessor::getResults(StringList& strings)
+std::vector<std::string> StringProcessor::getResults()
 {
 	std::lock_guard<std::mutex> guard(mutex_);
 
-	strings = strings_;
+	StringList tempStr = strings_;
 	// reset
 	process_ = false;
 	strings_.clear();
 	stages_.clear();
 
-	return !strings.empty();
+	return tempStr;
 }
 
 bool StringProcessor::enqueueStageOps(int stage, const std::vector<Operation>& operations)
@@ -130,7 +130,7 @@ bool StringProcessor::dequeueStageOps(int stage, std::vector<Operation> &operati
 	return true;
 }
 
-std::string StringProcessor::lowercase( std::string& s)
+std::string StringProcessor::procLowercase( std::string& s)
 {	
 	// convert string to lower case
 
@@ -138,13 +138,13 @@ std::string StringProcessor::lowercase( std::string& s)
 		c = ::tolower(c);
 	});
 
-	std::cout << "In Lowercase : " << s << std::endl;
+	std::cout << " ISADEBUG In Lowercase : " << s << std::endl;
 
 	return s;
 
 }
 
-std::string StringProcessor::uppercase( std::string& s)
+std::string StringProcessor::procUppercase( std::string& s)
 {
 	// convert string to lower case
 
@@ -152,19 +152,19 @@ std::string StringProcessor::uppercase( std::string& s)
 		c = ::toupper(c);
 	});
 
-	std::cout << "In Upper Case : " << s << std::endl;
+	std::cout << " ISADEBUG In Upper Case : " << s << std::endl;
 
 	return s;
 
 }
 
-std::string  StringProcessor::sort( std::string& str)
+std::string  StringProcessor::procSort( std::string& str)
 {
 	std::sort(str.begin(), str.end());
 	return str;
 }
 
-std::string StringProcessor::invert( std::string& str)
+std::string StringProcessor::procInvert( std::string& str)
 {
 	std::reverse(str.begin(), str.end());
 	return str;

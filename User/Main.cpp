@@ -11,6 +11,7 @@
 */
 #include <iostream>
 #include <string.h>
+#include <fstream>
 #include "StringProcessorLib.h"
 
 
@@ -21,21 +22,21 @@ int main()
 	std::string test = "ana are mere";
 
 
-	std::cout << "Lowercase: " <<
-		StringProcessor::Lowercase(test) << std::endl;
+	/*std::cout << "Lowercase: " <<
+		StringProcessor::lowercase(test) << std::endl;
 	std::cout << "Uppercase: " <<
-		StringProcessor::Uppercase(test) << std::endl;
+		StringProcessor::uppercase(test) << std::endl;
 	std::cout << "Sort:  " <<
-		StringProcessor::Sort(test) << std::endl;
+		StringProcessor::sort(test) << std::endl;
 	std::cout << "Invert: " <<
-		StringProcessor::Invert(test) << std::endl;
+		StringProcessor::invert(test) << std::endl;*/
 
 	StringProcessor::StringList strings{ "lkjflsd kdfjsk KSJHKA", "lkjfskdfjs kfd" };
 
 	StringProcessor processor;
 
-	processor.addStageOps(1, { StringProcessor::lowercase, StringProcessor::uppercase });
-	processor.addStageOps(2, { StringProcessor::invert, StringProcessor::sort });
+	processor.enqueueStageOps(1, { StringProcessor::lowercase, StringProcessor::uppercase });
+	processor.enqueueStageOps(2, { StringProcessor::invert, StringProcessor::sort });
 
 	processor.start( strings );
 
@@ -43,14 +44,18 @@ int main()
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 	}
 
-	StringProcessor::Job results;
+	std::vector<std::string> results;
 
-	processor.getResults(results);
+	results = processor.getResults();
 
-	std::ofstream out("out.txt");
+	std::ofstream outFile("out.txt");
 
 	for (auto&& line : results)
-		out << line;
+	{
+		std::cout << "ISADEBUG line " << line << std::endl;
+		outFile << line;
+		outFile.close();
+	}	
 
 	return 0;
 }
