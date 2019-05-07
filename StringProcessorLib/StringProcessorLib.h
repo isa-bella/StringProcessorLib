@@ -9,27 +9,30 @@
 #include <atomic>
 #include <vector>
 
+enum class Operation { lowercase, uppercase, sort, invert };
 
 	class StringProcessor
 	{
+		struct StringData {
+			std::string data_;
+			bool processed_{ false };
+		};
 	public:
-		enum Operation { lowercase, uppercase, sort, invert };
 
-		using StringList = std::vector<std::string>;
+		using StringList = std::vector<StringData>;
 		using StageOperations = std::pair<int, std::vector<Operation>>;
 
 	public:
-		StringProcessor( unsigned threadsNumber = 1 );
+		StringProcessor( unsigned threadsNumber = 2 );
 		virtual ~StringProcessor();
 
-		virtual bool start( const StringList &string );
+		virtual bool start( const std::vector<std::string> &string );
 
 		virtual bool enqueueStageOps(int stage, const std::vector<Operation> &operations);
 		virtual bool dequeueStageOps(int stage, std::vector<Operation>& operations);
 		
+		bool getResults(std::vector<std::string>& result);
 		bool jobReady();
-		std::vector<std::string> getResults();
-
 		bool done() const
 		{
 			return done_.load();
@@ -55,9 +58,7 @@
 	private:
 		std::list<StageOperations> stages_;
 		StringList				 strings_;
-		StringList				 results_;
 		std::vector<std::thread> threads_;
-		unsigned threadsNumber_{ 2 };
 		std::mutex mutex_;
 		std::condition_variable condition_;
 		

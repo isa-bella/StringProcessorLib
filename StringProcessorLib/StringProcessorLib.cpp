@@ -13,10 +13,10 @@
 #include <iomanip>
 #include <vector>
 
-StringProcessor::StringProcessor( unsigned threadsNumber ) : threadsNumber_{ threadsNumber }
+StringProcessor::StringProcessor( unsigned threadsNumber )
 {
-	for ( unsigned i = 0; i < threadsNumber_; i++ )
-		threads_.emplace_back( std::thread(&StringProcessor::waitForJobs, this) );
+	for (unsigned i = 0; i < threadsNumber; i++)
+		threads_.emplace_back(std::thread(&waitForJobs, this));
 }
 
 StringProcessor::~StringProcessor()
@@ -47,55 +47,74 @@ bool StringProcessor::jobReady()
 
 	condition_.wait(guard, [this]() { return !strings_.empty() || stop_; });
 		
-	return !stop_ && !strings_.empty();
-	
+	return !stop_ && !strings_.empty() && !done_;
 }
 
 void StringProcessor::process()
 {
-	// iterate stages and apply ops to string
-	// at the end make done_ = true;
+	std::string stringJob;
+	bool allProcessed = true;
+	int pos;
 
+	// Look for strings available for processing
+	auto readyToProcess = [&allProcessed]( const StringData &string ) {
+		if (!string.processed_)
+			allProcessed = false;
 
-	for (auto it = stages_.begin(); it != stages_.end(); ++it)
+		return !string.processed_ && !string.data_.empty();
+	};
+
 	{
-		for (auto it2 = (*it).second.begin(); it2 != (*it).second.end(); ++it2)
-		{
-			switch (*it2)
-			{
-			case lowercase:
-				//for (auto it3 = strings_.begin(); it3 != strings_.end(); ++it3)
-				for	(std::vector<std::string>::size_type it3 = 0; it3 != strings_.size(); it3++)
-				{
-					results_[it3] = procLowercase(strings_[it3]);
-				}
-				break;
-			case uppercase:
-				for (std::vector<std::string>::size_type it3 = 0; it3 != strings_.size(); it3++)
-				{
-					results_[it3] = procUppercase(strings_[it3]);
-				}
-				break;
-			case sort:
-				for (std::vector<std::string>::size_type it3 = 0; it3 != strings_.size(); it3++)
-				{
-					results_[it3] = procSort(strings_[it3]);
-				}
-				break;
-			case invert:
-				for (std::vector<std::string>::size_type it3 = 0; it3 != strings_.size(); it3++)
-				{
-					results_[it3] = procInvert(strings_[it3]);
-				}
-				break;
-			}
-		}
+		std::lock_guard<std::mutex> guard(mutex_);
 
+		auto it = std::find_if(strings_.begin(), strings_.end(), readyToProcess);
+
+		if (it != strings_.end()) {
+			stringJob = std::move((*it).data_);
+			pos = it - strings_.begin();
+		}
 	}
 
+	if (stringJob.empty()) {
+		if (allProcessed)
+			done_ = true;
+
+		return;
+	}
+
+	auto processFn = [&stringJob]( Operation op ) {
+		switch (op)
+		{
+		case Operation::lowercase:
+			StringProcessor::procLowercase(stringJob);
+			break;
+		case Operation::uppercase:
+			StringProcessor::procUppercase(stringJob);
+			break;
+		case Operation::sort:
+			StringProcessor::procSort(stringJob);
+			break;
+		case Operation::invert:
+			StringProcessor::procInvert(stringJob);
+			break;
+		default:
+			break;
+		}
+	};
+
+	// Process all stages
+	std::for_each(stages_.begin(), stages_.end(), [processFn](const StageOperations & stage) {
+		std::for_each(stage.second.begin(), stage.second.end(), processFn);
+	});
+
+	// Move the string back
+	std::lock_guard<std::mutex> guard(mutex_);
+
+	strings_[pos].data_ = std::move(stringJob);
+	strings_[pos].processed_ = true;
 }
 
-bool StringProcessor::start( const StringList &strings )
+bool StringProcessor::start( const std::vector<std::string> &strings )
 {
 	if (strings.empty())
 		return false;
@@ -109,22 +128,25 @@ bool StringProcessor::start( const StringList &strings )
 		process_ = true;
 	}
 
-	condition_.notify_one();
+	condition_.notify_all();
 
 	return true;
 }
 
-std::vector<std::string> StringProcessor::getResults()
+bool StringProcessor::getResults( std::vector<std::string> &result )
 {
 	std::lock_guard<std::mutex> guard(mutex_);
 
-	
-	// reset
-	process_ = false;
-	strings_.clear();
-	stages_.clear();
+	std::for_each(strings_.begin(), strings_.end(), [&result](StringData &&string) {
+		result.emplace_back(std::move(string.data_));
+	});
 
-	return results_;
+	// reset
+	stages_.clear();
+	strings_.clear();
+	process_ = false;
+	
+	return !result.empty();
 }
 
 bool StringProcessor::enqueueStageOps(int stage, const std::vector<Operation>& operations)
@@ -149,7 +171,6 @@ bool StringProcessor::enqueueStageOps(int stage, const std::vector<Operation>& o
 
 bool StringProcessor::dequeueStageOps(int stage, std::vector<Operation> &operations)
 {
-	StageOperations stageToDelete = make_pair(stage, operations);
 	std::lock_guard<std::mutex> guard(mutex_);
 
 	if (process_)
@@ -162,7 +183,7 @@ bool StringProcessor::dequeueStageOps(int stage, std::vector<Operation> &operati
 	if (it == stages_.end())
 		return false;
 
-	stageToDelete = *it;
+	operations = ( *it ).second;
 	stages_.erase(it);
 
 	return true;

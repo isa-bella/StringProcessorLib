@@ -44,9 +44,7 @@ int main()
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 	}
 
-	std::vector<std::string> results;
-
-	results = processor.getResults();
+	std::vector<std::string> results = processor.getResults();
 
 	std::ofstream outFile("out.txt");
 
