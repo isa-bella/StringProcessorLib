@@ -5,9 +5,6 @@
 	- ask user for input 
 	- save map of options per stage
 	- start the processing
-
-
-
 */
 #include <iostream>
 #include <string.h>
@@ -18,7 +15,6 @@
 
 int main()
 {
-	
 	std::string test = "ana are mere";
 
 
@@ -31,20 +27,29 @@ int main()
 	std::cout << "Invert: " <<
 		StringProcessor::invert(test) << std::endl;*/
 
-	StringProcessor::StringList strings{ "lkjflsd kdfjsk KSJHKA", "lkjfskdfjs kfd" };
+	std::vector<std::string> strings{ "lkjflsd kdfjsk KSJHKA", "lkjfskdfjs kfd" };
 
 	StringProcessor processor;
 
-	processor.enqueueStageOps(1, { StringProcessor::lowercase, StringProcessor::uppercase });
-	processor.enqueueStageOps(2, { StringProcessor::invert, StringProcessor::sort });
+	processor.enqueueStageOps(1, { Operation::lowercase, Operation::uppercase });
+	processor.enqueueStageOps(2, { Operation::invert, Operation::sort });
+	
+	namespace time = std::chrono;
 
+	auto start = time::high_resolution_clock::now();
 	processor.start( strings );
-
 	while (!processor.done()) {
 		std::this_thread::sleep_for(std::chrono::seconds(1));
+		std::cout << "Main thread: waiting for results...\n";
 	}
+	auto end = time::high_resolution_clock::now();
 
-	std::vector<std::string> results = processor.getResults();
+	std::cout << "Processing time: " << time::duration_cast<time::milliseconds>(end - start).count() << " ms\n";
+
+	std::vector<std::string> results;
+		
+	if (!processor.getResults(results))
+		return -1;
 
 	std::ofstream outFile("out.txt");
 
@@ -52,7 +57,6 @@ int main()
 	{
 		std::cout << "ISADEBUG line " << line << std::endl;
 		outFile << line;
-		outFile.close();
 	}	
 
 	return 0;

@@ -58,10 +58,12 @@ void StringProcessor::process()
 
 	// Look for strings available for processing
 	auto readyToProcess = [&allProcessed]( const StringData &string ) {
-		if (!string.processed_)
+		if (!string.processed_) {
 			allProcessed = false;
+			return !string.data_.empty();
+		}
 
-		return !string.processed_ && !string.data_.empty();
+		return false;
 	};
 
 	{
@@ -103,7 +105,7 @@ void StringProcessor::process()
 	};
 
 	// Process all stages
-	std::for_each(stages_.begin(), stages_.end(), [processFn](const StageOperations & stage) {
+	std::for_each(stages_.begin(), stages_.end(), [&processFn](const StageOperations & stage) {
 		std::for_each(stage.second.begin(), stage.second.end(), processFn);
 	});
 
@@ -124,7 +126,9 @@ bool StringProcessor::start( const std::vector<std::string> &strings )
 		if (!strings_.empty())
 			return false;
 	
-		strings_ = strings;
+		std::for_each(strings.begin(), strings.end(), [this](const std::string & str) {
+			strings_.emplace_back(str);
+		});
 		process_ = true;
 	}
 

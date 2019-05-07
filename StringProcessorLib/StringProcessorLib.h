@@ -14,6 +14,9 @@ enum class Operation { lowercase, uppercase, sort, invert };
 	class StringProcessor
 	{
 		struct StringData {
+			StringData(const std::string& data) : data_{ data }
+			{
+			}
 			std::string data_;
 			bool processed_{ false };
 		};
@@ -58,6 +61,8 @@ enum class Operation { lowercase, uppercase, sort, invert };
 	private:
 		std::list<StageOperations> stages_;
 		StringList				 strings_;
+		std::priority_queue<std::string> resultQueue_;
+
 		std::vector<std::thread> threads_;
 		std::mutex mutex_;
 		std::condition_variable condition_;
