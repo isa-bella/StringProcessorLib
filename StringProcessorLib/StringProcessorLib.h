@@ -8,6 +8,7 @@
 #include <mutex>
 #include <atomic>
 #include <vector>
+#include <iostream>
 
 enum class Operation { lowercase, uppercase, sort, invert, removespace };
 
@@ -18,21 +19,22 @@ enum class Operation { lowercase, uppercase, sort, invert, removespace };
 			{
 			}
 			std::string data_;
-			bool processed_{ false };
+			bool        processed_{ false };
 		};
 	public:
 	
-		using StringList = std::vector<StringData>;
+		using StringList =      std::vector<StringData>;
 		using StageOperations = std::pair<int, std::vector<Operation>>;
 
 	public:
+
 		StringProcessor( unsigned threadsNumber = 2 );
 		virtual ~StringProcessor();
 
 		virtual bool start( const std::vector<std::string> &string );
 
 		virtual bool enqueueStageOps(int stage, const std::vector<Operation> &operations);
-		virtual bool dequeueStageOps(int stage, std::vector<Operation>& operations);
+		virtual bool dequeueStageOps(int stage,  std::vector<Operation>& operations);
 		
 		bool getResults(std::vector<std::string>& result);
 		bool jobReady();
@@ -62,15 +64,18 @@ enum class Operation { lowercase, uppercase, sort, invert, removespace };
 		static void procRemoveSpace(std::string& str);
 
 	private:
-		std::list<StageOperations> stages_;
-		StringList				 strings_;
-		std::priority_queue<std::string> resultQueue_;
-
-		std::vector<std::thread> threads_;
+		
+		std::list<StageOperations>       stages_;
+		std::vector<std::thread>         threads_;
+		StringList				         strings_;
+		
 		std::mutex mutex_;
 		std::condition_variable condition_;
 		
-		bool process_{ false };
 		std::atomic_bool done_{ false };
 		std::atomic_bool stop_{ false };
+		bool process_{ false };
 	};
+
+	
+

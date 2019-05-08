@@ -16,7 +16,6 @@
 StringProcessor::StringProcessor( unsigned threadsNumber )
 {
 	for (unsigned i = 0; i < threadsNumber; i++)
-		//threads_.emplace_back(std::thread(&waitForJobs, this));
 		threads_.emplace_back(std::thread(&StringProcessor::waitForJobs, this));
 }
 
@@ -107,36 +106,53 @@ void StringProcessor::process()
 			break;
 		}
 	};
+	//debug
 
 	// Process all stages
 	std::for_each(stages_.begin(), stages_.end(), [&processFn](const StageOperations & stage) {
 		std::for_each(stage.second.begin(), stage.second.end(), processFn);
 	});
 
-	// Move the string back
 	std::lock_guard<std::mutex> guard(mutex_);
-
+	
+	// Move the string back
 	strings_[pos].data_ = std::move(stringJob);
 	strings_[pos].processed_ = true;
 }
 
 bool StringProcessor::start( const std::vector<std::string> &strings )
 {
-	std::cout << "ISADEBUG started ...." << std::endl;
-
 	if (strings.empty())
 		return false;
+
 	{
 		std::lock_guard<std::mutex> guard(mutex_);
 
 		if (!strings_.empty())
 			return false;
-	
+
 		std::for_each(strings.begin(), strings.end(), [this](const std::string & str) {
 			strings_.emplace_back(str);
-		});
+			});
+
+		for (auto it = stages_.begin(); it != stages_.end(); ++it)
+		{
+			std::iter_swap(it, std::min_element(it, stages_.end()));
+		}
 		process_ = true;
 	}
+
+	// DBG
+	std::for_each(stages_.begin(), stages_.end(), [](const StageOperations & stage) {
+		std::cout << "ISADEBUG stage: " << stage.first << ", operations: ";
+		std::for_each(stage.second.begin(), stage.second.end(), [](Operation op) {
+			std::cout << (int)op << " ";
+
+			});
+
+		std::cout << std::endl;
+
+		});
 
 	condition_.notify_all();
 
@@ -223,7 +239,5 @@ void StringProcessor::procRemoveSpace(std::string& str)
 {
 	str.erase(remove_if(str.begin(), str.end(), isspace), str.end());
 }
-
-
 
 
