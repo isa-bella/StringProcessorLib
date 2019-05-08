@@ -36,3 +36,41 @@ StringProcessor processor;
     
   //results can be fetched by calling getResults() method
   processor.getResults(results)
+  ________________________________________________________________________________________________
+  Unit Testing:
+  ________________________________________________________________________________________________ 
+  Input:
+  Assda drRRrfa PfffaASDv
+  EEll ggguur aaa lorEM ipsum dolor
+  hahaha aaaabbbcdefg123143124
+  
+  
+Operations on stages:   
+processor.enqueueStageOps(2, { Operation::uppercase });
+processor.enqueueStageOps(3, { Operation::sort, Operation::invert });
+processor.enqueueStageOps(1, { Operation::lowercase });
+
+Results:
+ISADEBUG stage: 1, operations: 0
+ISADEBUG stage: 2, operations: 1
+ISADEBUG stage: 3, operations: 2 3
+Processing time: 12 ms
+ISADEBUG line 'VSSSRRRRPFFFFDDDAAAAA  '
+ISADEBUG line 'UUUSRRRPOOOMMLLLLIGGGEEEDAAA     '
+ISADEBUG line 'HHHGFEDCBBBAAAAAAA443322111 '
+
+
+Operations on stages: 
+processor.enqueueStageOps(1, { Operation::lowercase, Operation::uppercase });
+processor.enqueueStageOps(3, { Operation::sort, Operation::invert });
+processor.enqueueStageOps(3, { Operation::uppercase });
+processor.enqueueStageOps(2, { Operation::lowercase, Operation::removespace });
+
+ISADEBUG stage: 1, operations: 0 1
+ISADEBUG stage: 2, operations: 0 4
+ISADEBUG stage: 3, operations: 2 3
+Processing time: 12 ms
+ISADEBUG line 'vsssrrrrpffffdddaaaaa'
+ISADEBUG line 'uuusrrrpooommlllligggeeedaaa'
+ISADEBUG line 'hhhgfedcbbbaaaaaaa443322111'
+  
