@@ -1,0 +1,38 @@
+The aim is to make a String Processor which allows a customizable pipeline. The String Processor’s main focus is speed efficiency
+and customizability. 
+For that purpose each string will pass through 3 stages, each stage having a customizable number operations chosen from a subset. 
+You will have to implement an application which receives the path to a file containing strings, 1 on each line. 
+The application will read all the strings in the file and then pass them to the String Processor which will run the strings through 
+the 3 stages, and when finished write the output to a file.
+___________________________________________________________________________________________________
+
+In order to use the String Processor library user must create an object of type StringProcessor.
+Method StringProcessor::start() is meant to start the processing. But before that, user must add operations on each of the three stages. 
+
+The String Processor class has two public methods which can be used to enque/deque string operations per stage.
+
+    virtual bool enqueueStageOps(int stage, const std::vector<Operation> &operations);
+		virtual bool dequeueStageOps(int stage,  std::vector<Operation>& operations);
+
+The application is multithreaded in sense of running processing methods on multiple strings in parallel for efficiency.
+
+Example: 
+StringProcessor processor; 
+
+/* ...
+  input a list of strings to process
+*/
+
+  //add operations to stages
+  processor.enqueueStageOps(1, { Operation::lowercase, Operation::uppercase });
+	processor.enqueueStageOps(3, { Operation::sort, Operation::invert });
+	processor.enqueueStageOps(3, { Operation::uppercase });
+	processor.enqueueStageOps(2, { Operation::lowercase, Operation::removespace });
+  
+  //start the processing and wait 'till it's done
+  processor.start( strings );
+	while (!processor.done())
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    
+  //results can be fetched by calling getResults() method
+  processor.getResults(results)
