@@ -9,7 +9,7 @@
 #include <atomic>
 #include <vector>
 
-enum class Operation { lowercase, uppercase, sort, invert };
+enum class Operation { lowercase, uppercase, sort, invert, removespace };
 
 	class StringProcessor
 	{
@@ -21,7 +21,7 @@ enum class Operation { lowercase, uppercase, sort, invert };
 			bool processed_{ false };
 		};
 	public:
-
+	
 		using StringList = std::vector<StringData>;
 		using StageOperations = std::pair<int, std::vector<Operation>>;
 
@@ -46,17 +46,20 @@ enum class Operation { lowercase, uppercase, sort, invert };
 
 		void process();
 
-		// Returns the string in lowercase format
-		static std::string procLowercase( std::string& str);
+		// Processes the string in lowercase format
+		static void procLowercase(std::string& str);
 
-		// Returns the string in uppercase format
-		static std::string procUppercase( std::string& str);
+		// Processes the string in uppercase format
+		static void procUppercase(std::string& str);
+		
+		// Sorts the string
+		static void procSort(std::string& str);
 
-		// Returns the string sorted
-		static std::string procSort( std::string& str);
+		// Inverts the string
+		static void procInvert(std::string& str);
 
-		// Returns the string inverted
-		static std::string procInvert( std::string& str);
+		//Removes the spaces from string
+		static void procRemoveSpace(std::string& str);
 
 	private:
 		std::list<StageOperations> stages_;

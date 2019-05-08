@@ -16,7 +16,8 @@
 StringProcessor::StringProcessor( unsigned threadsNumber )
 {
 	for (unsigned i = 0; i < threadsNumber; i++)
-		threads_.emplace_back(std::thread(&waitForJobs, this));
+		//threads_.emplace_back(std::thread(&waitForJobs, this));
+		threads_.emplace_back(std::thread(&StringProcessor::waitForJobs, this));
 }
 
 StringProcessor::~StringProcessor()
@@ -99,6 +100,9 @@ void StringProcessor::process()
 		case Operation::invert:
 			StringProcessor::procInvert(stringJob);
 			break;
+		case Operation::removespace:
+			StringProcessor::procRemoveSpace(stringJob);
+			break;
 		default:
 			break;
 		}
@@ -118,6 +122,8 @@ void StringProcessor::process()
 
 bool StringProcessor::start( const std::vector<std::string> &strings )
 {
+	std::cout << "ISADEBUG started ...." << std::endl;
+
 	if (strings.empty())
 		return false;
 	{
@@ -141,7 +147,7 @@ bool StringProcessor::getResults( std::vector<std::string> &result )
 {
 	std::lock_guard<std::mutex> guard(mutex_);
 
-	std::for_each(strings_.begin(), strings_.end(), [&result](StringData &&string) {
+	std::for_each(strings_.begin(), strings_.end(), [&result](StringData &string) {
 		result.emplace_back(std::move(string.data_));
 	});
 
@@ -193,43 +199,31 @@ bool StringProcessor::dequeueStageOps(int stage, std::vector<Operation> &operati
 	return true;
 }
 
-std::string StringProcessor::procLowercase( std::string& s)
+void StringProcessor::procLowercase(std::string& s)
 {	
-	// convert string to lower case
-
-	std::for_each(s.begin(), s.end(), [](char c) {
-		c = ::tolower(c);
-	});
-
-	std::cout << " ISADEBUG In Lowercase : " << s << std::endl;
-
-	return s;
-
+	std::transform(s.begin(), s.end(), s.begin(), ::tolower);
 }
 
-std::string StringProcessor::procUppercase( std::string& s)
+void StringProcessor::procUppercase(std::string& str)
 {
-	// convert string to lower case
-
-	std::for_each(s.begin(), s.end(), [](char c) {
-		c = ::toupper(c);
-	});
-
-	std::cout << " ISADEBUG In Upper Case : " << s << std::endl;
-
-	return s;
-
+	std::transform(str.begin(), str.end(), str.begin(), ::toupper);
 }
 
-std::string  StringProcessor::procSort( std::string& str)
+void StringProcessor::procSort( std::string& str)
 {
 	std::sort(str.begin(), str.end());
-	return str;
 }
 
-std::string StringProcessor::procInvert( std::string& str)
+void StringProcessor::procInvert( std::string& str)
 {
 	std::reverse(str.begin(), str.end());
-	return str;
 }
+
+void StringProcessor::procRemoveSpace(std::string& str)
+{
+	str.erase(remove_if(str.begin(), str.end(), isspace), str.end());
+}
+
+
+
 
